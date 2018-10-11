@@ -54,6 +54,8 @@ android {
 }
 
 dependencies {
+    implementation 'com.google.firebase:firebase-messaging:11.8.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
     testImplementation 'junit:junit:4.12'
 
     implementation "com.twilio:video-android:${versions.videoAndroid}"
@@ -62,3 +64,5 @@ dependencies {
     implementation "com.android.support:preference-v14:${versions.supportLibrary}"
     implementation "com.android.support:design:${versions.supportLibrary}"
 }
+
+apply plugin: 'com.google.gms.google-services'

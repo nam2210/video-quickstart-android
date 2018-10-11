@@ -52,4 +52,6 @@
 
     </LinearLayout>
 
+    <include layout="@layout/activity_in_come" />
+
 </android.support.design.widget.CoordinatorLayout>

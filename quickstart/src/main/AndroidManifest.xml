@@ -14,6 +14,7 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -32,12 +33,27 @@
         </activity>
         <activity
             android:name=".activity.SettingsActivity"
-            android:theme="@style/AppTheme.Settings"
             android:label="@string/title_activity_settings"
-            android:parentActivityName=".activity.VideoActivity">
+            android:parentActivityName=".activity.VideoActivity"
+            android:theme="@style/AppTheme.Settings">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.twilio.video.quickstart.activity.VideoActivity" />
+        </activity>
+
+        <service android:name=".fcm.FireInstanceIdService">
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
+            </intent-filter>
+        </service>
+        <service android:name=".fcm.FireMessagingService">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <activity android:name=".activity.InComeActivity"
+            android:launchMode="singleTask">
         </activity>
     </application>
 

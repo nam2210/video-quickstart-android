@@ -1,6 +1,7 @@
 package com.twilio.video.quickstart.activity;
 
 import android.Manifest;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,6 +15,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -25,10 +27,14 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.gson.JsonObject;
 import com.koushikdutta.async.future.FutureCallback;
 import com.koushikdutta.ion.Ion;
@@ -57,6 +63,7 @@ import com.twilio.video.Vp8Codec;
 import com.twilio.video.Vp9Codec;
 import com.twilio.video.quickstart.BuildConfig;
 import com.twilio.video.quickstart.R;
+import com.twilio.video.quickstart.SoundPoolManager;
 import com.twilio.video.quickstart.dialog.Dialog;
 import com.twilio.video.CameraCapturer.CameraSource;
 import com.twilio.video.ConnectOptions;
@@ -68,6 +75,7 @@ import com.twilio.video.VideoView;
 import com.twilio.video.quickstart.util.CameraCapturerCompat;
 
 import java.util.Collections;
+import java.util.Timer;
 import java.util.UUID;
 
 import static com.twilio.video.quickstart.R.drawable.ic_phonelink_ring_white_24dp;
@@ -131,6 +139,8 @@ public class VideoActivity extends AppCompatActivity {
      * Android shared preferences used for settings
      */
     private SharedPreferences preferences;
+
+
 
     /*
      * Android application UI elements
@@ -196,6 +206,8 @@ public class VideoActivity extends AppCompatActivity {
          * Set the initial state of the UI
          */
         intializeUI();
+        setUp();
+        handleInComeIntent(getIntent());
     }
 
     @Override
@@ -403,12 +415,13 @@ public class VideoActivity extends AppCompatActivity {
              * token server and the variable USE_TOKEN_SERVER=true to your
              * local.properties file.
              */
-            retrieveAccessTokenfromServer();
+            //retrieveAccessTokenfromServer();
         }
     }
 
     private void connectToRoom(String roomName) {
         configureAudio(true);
+        Log.e(TAG, "connect to Room =" + accessToken);
         ConnectOptions.Builder connectOptionsBuilder = new ConnectOptions.Builder(accessToken)
                 .roomName(roomName);
 
@@ -1100,5 +1113,74 @@ public class VideoActivity extends AppCompatActivity {
             audioManager.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL,
                     AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
         }
+    }
+
+    //=====================
+    // handle income data
+    //=====================
+    private SoundPoolManager soundPoolManager;
+    private NotificationManager notificationManager;
+
+    private ConstraintLayout mVideoContainer;
+    private int notificationId=-1;
+    private String token = "";
+    private String roomName = "";
+
+    public void setUp(){
+        soundPoolManager = SoundPoolManager.getInstance(this);
+        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        mVideoContainer = findViewById(R.id.container_in_come);
+
+
+
+        Button btnCancel = findViewById(R.id.btn_cancel);
+        Button btnCall = findViewById(R.id.btn_call);
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                soundPoolManager.stopRinging();
+                notificationManager.cancel(notificationId);
+                //todo connect to twilio
+                finish();
+            }
+        });
+        btnCall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                soundPoolManager.stopRinging();
+                notificationManager.cancel(notificationId);
+
+                accessToken = token;
+                mVideoContainer.setVisibility(View.INVISIBLE);
+                connectToRoom(roomName);
+
+            }
+        });
+    }
+
+
+    private void handleInComeIntent(Intent intent){
+        if (intent != null && intent.getAction() != null){
+            if (intent.getAction().equals(InComeActivity.ACTION_VIDEO_NOTIFICATION)){
+                token = intent.getStringExtra(InComeActivity.VIDEO_NOTIFICATION_TOKEN);
+                roomName = intent.getStringExtra(InComeActivity.VIDEO_NOTIFICATION_ROOM_NAME);
+                notificationId = intent.getIntExtra(InComeActivity.VIDEO_NOTIFICATION_ID, -1);
+                Log.e(TAG,"token=" + token);
+                Log.e(TAG, "room=" + roomName);
+                //show call info
+                soundPoolManager.playRinging();
+                mVideoContainer.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+
+    @Override //to turn on screen while its lock when call is arriving
+    public void onAttachedToWindow() {
+        Window window = getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
     }
 }
